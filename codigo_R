@@ -1,0 +1,145 @@
+# Lectura de los datos
+datos <- read.table(file.choose(), header=TRUE, sep='\t')
+head(datos)
+attach(datos)
+
+# definicion de variables dummy
+
+data(datos2)
+levels(datos$x2) <- c('cumple','No cumple')
+levels(datos$x10) <- c('cumple','No cumple')
+levels(datos$x15) <- c('cumple','No cumple')
+levels(datos$x17) <- c('cumple','No cumple')
+levels(datos$x19) <- c('cumple','No cumple')
+attach(datos2)
+
+# Grafico Densidad Peso al nacer
+x <- (x=datos2$y)
+F1 <- density(x)
+plot(F1, cex.main=0.8 , las=0.3, lwd=3, xlim=c(1, 5000),
+     xlab='Peso(gr)', ylab='Densidad', col='black',
+     main='')
+mean(datos2$y)
+
+#  Aplicar fitdist para encontrar la mejor distribución
+
+require(gamlss)
+datos2
+mod <- fitDist(y, data=datos2, type= 'realplus')
+mod$fits
+mod
+
+par(mfrow=c(2, 2))
+plot(mod$fits)
+
+# Histogramas Mejores distribuciones
+windows(50,50)
+par(mfrow=c(2, 3))
+m2 <- histDist( y, data=datos2, family =BCTo, ylim=c(0,0.0009), main = 'Box-Cox t', xlab='Peso(gr)', ylab='Densidad', lwd=3, col='black')
+m3 <- histDist( y, data=datos2, family =BCPEo, ylim=c(0,0.00095), main = 'Box-Cox Power Exp', xlab='Peso(gr)', ylab='Densidad', lwd=3)
+m1 <- histDist( y, data=datos2, family =BCCGo, ylim=c(0,0.00095), main = 'Box-Cox Cole-Green', xlab='Peso(gr)', ylab='Densidad', lwd=3)
+m4 <- histDist( y, data=datos2, family =GG, ylim=c(0,0.0009), main = 'Generalized-Gamma', xlab='Peso(gr)', ylab='Densidad',lwd=3)
+m5 <- histDist( y, data=datos2, family =WEI3, ylim=c(0,0.0009), main = 'Weibull 3', xlab='Peso(gr)', ylab='Densidad',lwd=3)
+
+# Boxplots
+par(mfrow=c(2, 3))
+boxplot(datos2$y ~ datos$x1, las=1,
+        ylab='Peso al nacer (gr)', 
+        xlab='Edad de la madre')
+boxplot(datos2$y ~ datos$x2, las=1,
+        ylab='Peso al nacer (gr)', 
+        xlab='Antecedentes ginecobstetricos')
+boxplot(datos2$y ~ datos$x15, las=1,
+        ylab='Peso al nacer (gr)', 
+        xlab='Ingreso oportuno al programa Control Prenatal')
+boxplot(datos2$y ~ datos$x10, las=1,
+        ylab='Peso al nacer(gr)', 
+        xlab='Urocultivo')
+boxplot(datos2$y ~ datos$x17, las=1,
+        ylab='Peso al nacer(gr)', 
+        xlab='Citologia')
+boxplot(datos2$y ~ datos$x19, las=1,
+        ylab='Peso al nacer (gr)', 
+        xlab='O Sullivan')
+
+
+
+
+# Aplicacion gamlss -------------------------------------------------------
+
+datos2 <- subset(datos,select=c(y, x2, x10, x15, x17, x19))
+datos2
+# Modelo horizonte
+horizonte <- formula(~ x1 + x2 + x10 + 
+                       x15 + x17 + x19)
+
+
+## Ajuste del modelo inicial con la distribucion BCTo
+#con1 <- gamlss.control(c.crit=0.001, n.cyc=10000)
+bct0 <- gamlss(y ~ 1, sigma.fo= ~ 1, data=datos2, family=BCTo())
+#control=con1)
+
+bct1 <- stepGAICAll.A(bct0, trace=F,
+                      scope=list(lower= ~ 1, upper=horizonte),
+                      sigma.scope=list(lower= ~ 1, upper=horizonte),
+                      nu.scope=list(lower= ~ 1, upper=horizonte),
+                      tau.scope=list(lower= ~ 1, upper=horizonte))
+bct1 <- refit(bct1)
+
+## Ajuste del modelo inicial con la distribucion BCPEo
+#con1 <- gamlss.control(c.crit=0.001, n.cyc=10000)
+bcpe0 <- gamlss(y ~ 1, sigma.fo= ~ 1, data=datos2, family=BCPEo())
+#control=con1)
+bcpe1 <- stepGAICAll.A(bcpe0, trace=F,
+                       scope=list(lower= ~ 1, upper=horizonte),
+                       sigma.scope=list(lower= ~ 1, upper=horizonte),
+                       nu.scope=list(lower= ~ 1, upper=horizonte),
+                       tau.scope=list(lower= ~ 1, upper=horizonte))
+bcpe1 <- refit(bcpe1)
+
+## Ajuste del modelo inicial con la distribucion BCCGo
+bccg0 <- gamlss(y ~ 1, sigma.fo= ~ 1, data=datos2, family=BCCGo())
+bccg1 <- stepGAICAll.A(bccg0, trace=F,
+                       scope=list(lower= ~ 1, upper=horizonte),
+                       sigma.scope=list(lower= ~ 1, upper=horizonte),
+                       nu.scope=list(lower= ~ 1, upper=horizonte))
+bccg1 <- refit(bccg1)
+
+## Ajuste del modelo inicial con la distribucion GG
+gg0 <- gamlss(y ~ 1, sigma.fo= ~ 1, data=datos2, family=GG())
+gg1 <- stepGAICAll.A(gg0, trace=F,
+                     scope=list(lower= ~ 1, upper=horizonte),
+                     sigma.scope=list(lower= ~ 1, upper=horizonte),
+                     nu.scope=list(lower= ~ 1, upper=horizonte))
+gg1 <- refit(gg1)
+
+## Ajuste del modelo inicial con la distribucion WEI3
+wei30 <- gamlss(y ~ 1, sigma.fo= ~ 1, data=datos2, family=WEI3())
+wei31 <- stepGAICAll.A(wei30, trace=F,
+                       scope=list(lower= ~ 1, upper=horizonte),
+                       sigma.scope=list(lower= ~ 1, upper=horizonte))
+
+wei31 <- refit(wei31)
+
+# Mejor AIC 
+AIC(bccg1, wei31, gg1, bct1, bcpe1, k=log(nrow(datos2)))
+
+# Calculando los SBC
+AIC(bccg1, wei31, gg1, bct1, bcpe1, k=log(nrow(datos2)))
+
+aov(wei31)
+
+par(mfrow=c(1,3))
+wp(wei31)
+wp(gg1)
+wp(bcpe1)
+wp(bccg1)
+wp(bct1)
+
+
+
+
+summary(wei31)
+
+
+
