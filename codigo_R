@@ -7,11 +7,11 @@ attach(datos)
 # definicion de variables dummy
 
 data(datos2)
-levels(datos$x2) <- c('cumple','No cumple')
-levels(datos$x10) <- c('cumple','No cumple')
-levels(datos$x15) <- c('cumple','No cumple')
-levels(datos$x17) <- c('cumple','No cumple')
-levels(datos$x19) <- c('cumple','No cumple')
+levels(datos2$x2) <- c('cumple','No cumple')
+levels(datos2$x10) <- c('cumple','No cumple')
+levels(datos2$x15) <- c('cumple','No cumple')
+levels(datos2$x17) <- c('cumple','No cumple')
+levels(datos2$x19) <- c('cumple','No cumple')
 attach(datos2)
 
 # Grafico Densidad Peso al nacer
