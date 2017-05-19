@@ -1,5 +1,5 @@
 # Lectura de los datos
-datos <- "https://github.com/prisciramirez/PesoalNacer/blob/master/datospesoalnacer"
+datos<-"https://raw.githubusercontent.com/prisciramirez/PesoalNacer/master/datospesoalnacer"
 datos2 <- read.table(file=datos, header=TRUE, sep='\t')
 head(datos)
 attach(datos)
